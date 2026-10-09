@@ -6,12 +6,26 @@ import {
   Avatar,
   TextField,
   InputAdornment,
+  IconButton,
+  Tooltip,
+  CircularProgress,
+  Button,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogContentText,
+  DialogActions,
 } from "@mui/material";
 import { DataGrid } from "@mui/x-data-grid";
 import SearchIcon from "@mui/icons-material/Search";
+import DeleteIcon from "@mui/icons-material/Delete";
+import { toast } from "react-toastify";
 import Header from "components/Header";
 import RecordDetailDialog from "components/RecordDetailDialog";
-import { useGetAllProductsQuery } from "state/api";
+import {
+  useGetAllProductsQuery,
+  useDeleteProductMutation,
+} from "state/api";
 
 const DETAIL_FIELDS = [
   { key: "product_name", label: "Product" },
@@ -46,8 +60,21 @@ const Products = () => {
   const [category, setCategory] = useState("All");
   const [search, setSearch] = useState("");
   const [selectedRow, setSelectedRow] = useState(null);
+  const [deleteTarget, setDeleteTarget] = useState(null);
 
   const { data, isLoading } = useGetAllProductsQuery({ category });
+  const [deleteProduct, { isLoading: isDeleting }] = useDeleteProductMutation();
+
+  const handleDeleteConfirm = async () => {
+    if (!deleteTarget?._id) return;
+    try {
+      await deleteProduct(deleteTarget._id).unwrap();
+      toast.success(`"${deleteTarget.product_name || "Product"}" deleted successfully.`);
+      setDeleteTarget(null);
+    } catch (error) {
+      toast.error(error?.data?.message || "Failed to delete product.");
+    }
+  };
 
   const rows = (data?.data || []).filter((r) =>
     search
@@ -125,6 +152,27 @@ const Products = () => {
         );
       },
     },
+    {
+      field: "actions",
+      headerName: "",
+      width: 70,
+      sortable: false,
+      filterable: false,
+      renderCell: (p) => (
+        <Tooltip title="Delete product">
+          <IconButton
+            size="small"
+            color="error"
+            onClick={(e) => {
+              e.stopPropagation();
+              setDeleteTarget(p.row);
+            }}
+          >
+            <DeleteIcon fontSize="small" />
+          </IconButton>
+        </Tooltip>
+      ),
+    },
   ];
 
   // Category stats
@@ -187,6 +235,38 @@ const Products = () => {
         fields={DETAIL_FIELDS}
         imageField="product_image"
       />
+
+      <Dialog
+        open={!!deleteTarget}
+        onClose={() => !isDeleting && setDeleteTarget(null)}
+      >
+        <DialogTitle>Confirm Delete</DialogTitle>
+        <DialogContent>
+          <DialogContentText>
+            Are you sure you want to delete{" "}
+            <strong>{deleteTarget?.product_name || "this product"}</strong>?
+            This action cannot be undone.
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button
+            onClick={() => setDeleteTarget(null)}
+            color="primary"
+            disabled={isDeleting}
+          >
+            Cancel
+          </Button>
+          <Button
+            onClick={handleDeleteConfirm}
+            color="error"
+            variant="contained"
+            autoFocus
+            disabled={isDeleting}
+          >
+            {isDeleting ? <CircularProgress size={20} color="inherit" /> : "Delete"}
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 };

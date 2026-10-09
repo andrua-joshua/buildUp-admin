@@ -276,6 +276,13 @@ export const api = createApi({
       },
       providesTags: ["Products"],
     }),
+    deleteProduct: build.mutation({
+      query: (id) => ({
+        url: `stock/delete_stock/${id}`,
+        method: "DELETE",
+      }),
+      invalidatesTags: ["Products"],
+    }),
 
     // ── Jobs (all job posts with categories) ──────────────────────────────
     getAllAdminJobs: build.query({
@@ -325,5 +332,6 @@ export const {
   useForwardEscrowMessageMutation,
   useRejectEscrowMessageMutation,
   useGetAllProductsQuery,
+  useDeleteProductMutation,
   useGetAllAdminJobsQuery,
 } = api;
