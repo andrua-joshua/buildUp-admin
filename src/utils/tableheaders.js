@@ -4,6 +4,7 @@ export const Businesscolumns = [
       headerName: "Business Name",
       flex: 0.5,
     },
+    
     {
       field: "business_email",
       headerName: "Business Email",
